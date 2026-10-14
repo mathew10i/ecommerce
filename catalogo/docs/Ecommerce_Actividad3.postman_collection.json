@@ -1,0 +1,149 @@
+{
+  "info": {
+    "name": "E-commerce - Auth y Catálogo",
+    "description": "Flujo demostrativo de la actividad: usuario, saldo, productos, carrito, compra y rechazo de doble cobro.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseAuth", "value": "http://localhost:8080"},
+    {"key": "baseCatalogo", "value": "http://localhost:8081"},
+    {"key": "usuarioId", "value": ""},
+    {"key": "mouseId", "value": ""},
+    {"key": "audifonosId", "value": ""},
+    {"key": "carritoId", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "1. Crear usuario",
+      "event": [{
+        "listen": "test",
+        "script": {"exec": [
+          "pm.test('Usuario creado', () => pm.response.to.have.status(200));",
+          "pm.collectionVariables.set('usuarioId', pm.response.json().usuario.idUsuario);"
+        ]}
+      }],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"Usuario Demo\",\n  \"correo\": \"demo.catalogo@example.com\",\n  \"password\": \"ClaveSegura123\",\n  \"rol\": \"CLIENTE\",\n  \"edad\": 25,\n  \"numeroTelefonico\": \"3000000000\"\n}"},
+        "url": "{{baseAuth}}/api/ecommerce/usuario/save"
+      }
+    },
+    {
+      "name": "2. Recargar saldo",
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('Saldo en 250000', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().saldo).to.eql(250000); });"
+      ]}}],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"monto\": 250000,\n  \"referencia\": \"RECARGA-DEMO-001\"\n}"},
+        "url": "{{baseAuth}}/api/ecommerce/usuarios/{{usuarioId}}/saldo/recargas"
+      }
+    },
+    {
+      "name": "3. Crear mouse",
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('Mouse creado', () => pm.response.to.have.status(201));",
+        "pm.collectionVariables.set('mouseId', pm.response.json().id);"
+      ]}}],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"Mouse inalámbrico\",\n  \"descripcion\": \"Mouse ergonómico Bluetooth\",\n  \"precio\": 45000,\n  \"stock\": 10,\n  \"imagenUrl\": \"https://ejemplo.com/mouse.jpg\"\n}"},
+        "url": "{{baseCatalogo}}/api/catalogo/productos"
+      }
+    },
+    {
+      "name": "4. Crear audífonos",
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('Audífonos creados', () => pm.response.to.have.status(201));",
+        "pm.collectionVariables.set('audifonosId', pm.response.json().id);"
+      ]}}],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"nombre\": \"Audífonos Bluetooth\",\n  \"descripcion\": \"Audífonos inalámbricos\",\n  \"precio\": 80000,\n  \"stock\": 5,\n  \"imagenUrl\": \"https://ejemplo.com/audifonos.jpg\"\n}"},
+        "url": "{{baseCatalogo}}/api/catalogo/productos"
+      }
+    },
+    {
+      "name": "5. Crear carrito activo",
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('Carrito activo', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().estado).to.eql('ACTIVO'); });",
+        "pm.collectionVariables.set('carritoId', pm.response.json().id);"
+      ]}}],
+      "request": {
+        "method": "POST",
+        "url": "{{baseCatalogo}}/api/catalogo/carritos/usuarios/{{usuarioId}}"
+      }
+    },
+    {
+      "name": "6. Agregar dos mouses",
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('Subtotal mouse 90000', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().total).to.eql(90000); });"
+      ]}}],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"productoId\": \"{{mouseId}}\",\n  \"cantidad\": 2\n}"},
+        "url": "{{baseCatalogo}}/api/catalogo/carritos/{{carritoId}}/items"
+      }
+    },
+    {
+      "name": "7. Agregar audífonos",
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('Total 170000', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().total).to.eql(170000); });"
+      ]}}],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"productoId\": \"{{audifonosId}}\",\n  \"cantidad\": 1\n}"},
+        "url": "{{baseCatalogo}}/api/catalogo/carritos/{{carritoId}}/items"
+      }
+    },
+    {
+      "name": "8. Consultar carrito",
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('Un ítem por producto', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().items).to.have.length(2); });"
+      ]}}],
+      "request": {"method": "GET", "url": "{{baseCatalogo}}/api/catalogo/carritos/{{carritoId}}"}
+    },
+    {
+      "name": "9. Comprar",
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('Compra confirmada', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().estado).to.eql('COMPRADO'); });",
+        "pm.test('Saldo restante 80000', () => pm.expect(pm.response.json().saldoRestante).to.eql(80000));"
+      ]}}],
+      "request": {"method": "POST", "url": "{{baseCatalogo}}/api/catalogo/carritos/{{carritoId}}/comprar"}
+    },
+    {
+      "name": "10. Verificar saldo",
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('Saldo 80000', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().saldo).to.eql(80000); });"
+      ]}}],
+      "request": {"method": "GET", "url": "{{baseAuth}}/api/ecommerce/usuarios/{{usuarioId}}/saldo"}
+    },
+    {
+      "name": "11. Verificar stock mouse",
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('Stock mouse 8', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().stock).to.eql(8); });"
+      ]}}],
+      "request": {"method": "GET", "url": "{{baseCatalogo}}/api/catalogo/productos/{{mouseId}}"}
+    },
+    {
+      "name": "12. Verificar stock audífonos",
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('Stock audífonos 4', () => { pm.response.to.have.status(200); pm.expect(pm.response.json().stock).to.eql(4); });"
+      ]}}],
+      "request": {"method": "GET", "url": "{{baseCatalogo}}/api/catalogo/productos/{{audifonosId}}"}
+    },
+    {
+      "name": "13. Rechazar segundo cobro",
+      "event": [{"listen": "test", "script": {"exec": [
+        "pm.test('No cobra dos veces', () => pm.response.to.have.status(409));"
+      ]}}],
+      "request": {"method": "POST", "url": "{{baseCatalogo}}/api/catalogo/carritos/{{carritoId}}/comprar"}
+    }
+  ]
+}
