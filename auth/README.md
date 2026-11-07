@@ -12,6 +12,18 @@ idempotentes para integrarse con el microservicio Catálogo.
 
 Las credenciales se pueden cambiar con `DB_URL`, `DB_USERNAME` y `DB_PASSWORD`.
 
+## Integracion con notificaciones
+
+Cuando se registra correctamente un usuario, Auth publica en Amazon SQS un
+evento `REGISTRO_USUARIO` con correo, telefono y mensaje. La integracion se
+activa con `NOTIFICATIONS_ENABLED=true` y requiere
+`AWS_SQS_NOTIFICATION_QUEUE_URL`. Las credenciales se obtienen de la cadena
+estandar de AWS; no se guardan llaves en el codigo.
+
+Si la publicacion falla, el usuario permanece registrado y el error queda en el
+log. Para entrega garantizada en produccion se recomienda agregar el patron
+Transactional Outbox.
+
 ## Operaciones de saldo
 
 | Método | Ruta | Uso |

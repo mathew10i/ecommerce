@@ -1,11 +1,13 @@
 package com.ecommerce.auth.domain.usecase;
 import com.ecommerce.auth.domain.model.gateway.EncrypterGateway;
+import com.ecommerce.auth.domain.model.gateway.NotificationGateway;
 
 import java.math.BigDecimal;
 import com.ecommerce.auth.domain.model.Usuario;
 import com.ecommerce.auth.domain.model.gateway.UsuarioGetaway;
 import lombok.RequiredArgsConstructor;
 import com.ecommerce.auth.domain.model.RespuestaUsuario;
+import com.ecommerce.auth.domain.model.Notificacion;
 
 
 @RequiredArgsConstructor
@@ -14,6 +16,7 @@ public class UsuarioUseCase {
 
     private final UsuarioGetaway usuarioGetaway;
     private final EncrypterGateway encrypterGateway;
+    private final NotificationGateway notificationGateway;
 
 
 
@@ -61,6 +64,13 @@ public class UsuarioUseCase {
 
         Usuario usuarioGuardado =
                 usuarioGetaway.guardarUsuario(usuario);
+
+        notificationGateway.enviarMensaje(new Notificacion(
+                "REGISTRO_USUARIO",
+                usuarioGuardado.getCorreo(),
+                usuarioGuardado.getNumeroTelefonico(),
+                "Usuario registrado con exito"
+        ));
 
         return new RespuestaUsuario(
                 "Usuario creado correctamente",

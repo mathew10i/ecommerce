@@ -1,0 +1,33 @@
+package com.ecommerce.auth.infraestructure.message_broker;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.SqsClientBuilder;
+
+import java.net.URI;
+
+@Configuration
+@ConditionalOnProperty(name = "notifications.enabled", havingValue = "true")
+public class AwsSqsConfig {
+
+    @Bean
+    public SqsClient sqsClient(
+            @Value("${aws.region}") String region,
+            @Value("${aws.endpoint:}") String endpoint
+    ) {
+        SqsClientBuilder builder = SqsClient.builder()
+                .region(Region.of(region))
+                .credentialsProvider(DefaultCredentialsProvider.create());
+
+        if (endpoint != null && !endpoint.isBlank()) {
+            builder.endpointOverride(URI.create(endpoint));
+        }
+
+        return builder.build();
+    }
+}
